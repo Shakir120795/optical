@@ -2844,6 +2844,8 @@ if(etDate){ var t = new Date(); t.setDate(t.getDate() + 1); etDate.min = t.toISO
   var bar = document.getElementById("tourBar");
   var cue = document.getElementById("tourCue");
   var duration = 0, shown = 0, primed = false;
+  var isMob = window.innerWidth <= 768;
+  if(isMob){ try{ video.src = "tour-mobile.mp4"; video.load(); }catch(e){} }
 
   video.pause();
   video.addEventListener("loadedmetadata", function(){
@@ -2880,14 +2882,14 @@ if(etDate){ var t = new Date(); t.setDate(t.getDate() + 1); etDate.min = t.toISO
     lastTs = ts;
     var tg = targetTime();
     if(tg){
-      var k = 1 - Math.exp(-dt / 0.085);
+      var k = 1 - Math.exp(-dt / (isMob ? 0.16 : 0.085));
       shown += (tg.t - shown) * k;
       if(Math.abs(tg.t - shown) < 0.015) shown = tg.t;
       /* One seek at a time: never queue a new currentTime while the
          previous seek is still decoding (seek pile-up is what made
          the tour stutter), and only seek once the playhead has moved
          at least one video frame (~1/24s). */
-      if(duration && video.readyState >= 2 && !video.seeking && Math.abs(video.currentTime - shown) > 0.04){
+      if(duration && video.readyState >= 2 && !video.seeking && Math.abs(video.currentTime - shown) > (isMob ? 0.08 : 0.04)){
         try{ video.currentTime = shown; }catch(e){}
       }
       bar.style.width = (tg.p * 100).toFixed(2) + "%";
@@ -3291,8 +3293,10 @@ if(etDate){ var t = new Date(); t.setDate(t.getDate() + 1); etDate.min = t.toISO
       /* hero video: gentle scale as the tour scrubs (transform only —
          animating a filter on the full-screen video forces a repaint
          every frame and makes the scrub judder) */
-      gsap.to("#tourVideo", { scale: 1.07, ease: "none",
-        scrollTrigger: { trigger: "#journey", start: "top top", end: "bottom bottom", scrub: 1 } });
+      if(window.innerWidth > 768){
+        gsap.to("#tourVideo", { scale: 1.07, ease: "none",
+          scrollTrigger: { trigger: "#journey", start: "top top", end: "bottom bottom", scrub: 1 } });
+      }
 
       /* staggered, masked word reveal for section + page headings */
       document.querySelectorAll(".sec-head h2, .home-offers h2").forEach(function(h){
